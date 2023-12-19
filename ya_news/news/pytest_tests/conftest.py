@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
 
 import pytest
+from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
+
 from news.models import Comment, News
 
 
@@ -17,15 +19,32 @@ def reader(django_user_model):
 
 
 @pytest.fixture
-def author_client(author, client):
+def author_client(author):
+    client = Client()
     client.force_login(author)
     return client
 
 
 @pytest.fixture
-def reader_client(reader, client):
+def reader_client(reader):
+    client = Client()
     client.force_login(reader)
     return client
+
+
+@pytest.fixture
+def detail_url(news):
+    return reverse('news:detail', args=(news.id,))
+
+
+@pytest.fixture
+def home_url():
+    return reverse('news:home')
+
+
+@pytest.fixture
+def edit_url(comment):
+    return reverse('news:edit', args=(comment.pk,))
 
 
 @pytest.fixture
@@ -50,17 +69,18 @@ def comment(author, news):
 
 @pytest.fixture
 def create_news(author, news):
-    News.objects.bulk_create([
-        News(title=f'Новость {i}') for i in range(11)
+    now = datetime.now()
+    news_object = News.objects.bulk_create([
+        News(
+            title=f'Новость {i}',
+            date=(now + timedelta(days=i)).astimezone(timezone.utc))
+        for i in range(11)
     ])
+    return news_object
 
 
 @pytest.fixture
-def create_comment(author, comment):
-    news = News.objects.create(
-        title='Тестовая новость'
-    )
-    detail_url = reverse('news:detail', args=(news.pk,))
+def create_comment(author, news, detail_url, comment):
     now = datetime.now()
     for i in range(2):
         comment = Comment.objects.create(
@@ -68,14 +88,3 @@ def create_comment(author, comment):
         )
         comment.created = (now + timedelta(days=i)).astimezone(timezone.utc)
         comment.save()
-    return news, detail_url, comment
-
-
-@pytest.fixture
-def form_data(author, news):
-    return {
-        'news': news.pk,
-        'text': 'Новый текст',
-        'author': author,
-        'created': datetime.now()
-    }

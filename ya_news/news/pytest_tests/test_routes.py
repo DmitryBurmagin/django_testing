@@ -23,16 +23,21 @@ def test_news_detail_for_anonymous_user(client, news):
 
 
 @pytest.mark.parametrize(
-    'parametrized_client, expected_status',
+    'name, parametrized_client, expected_status',
     (
-        (pytest.lazy_fixture('client'), HTTPStatus.FOUND),
-        (pytest.lazy_fixture('author_client'), HTTPStatus.OK),
-        (pytest.lazy_fixture('reader_client'), HTTPStatus.NOT_FOUND)
+        ('news:edit', pytest.lazy_fixture('client'),
+         HTTPStatus.FOUND),
+        ('news:edit', pytest.lazy_fixture('author_client'),
+         HTTPStatus.OK),
+        ('news:edit', pytest.lazy_fixture('reader_client'),
+         HTTPStatus.NOT_FOUND),
+        ('news:delete', pytest.lazy_fixture('client'),
+         HTTPStatus.FOUND),
+        ('news:delete', pytest.lazy_fixture('author_client'),
+         HTTPStatus.OK),
+        ('news:delete', pytest.lazy_fixture('reader_client'),
+         HTTPStatus.NOT_FOUND)
     ),
-)
-@pytest.mark.parametrize(
-    'name',
-    ('news:edit', 'news:delete')
 )
 def test_edit_comment(parametrized_client, name, comment, expected_status):
     url = reverse(name, args=(comment.pk,))
