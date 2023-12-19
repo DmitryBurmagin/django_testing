@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+
 from notes.models import Note
+from notes.forms import NoteForm
 
 User = get_user_model()
 
@@ -21,17 +23,19 @@ class TestContent(TestCase):
             slug='note',
             author=cls.author
         )
+        cls.auth_client.force_login(cls.author)
+        cls.reader_client = Client()
+        cls.reader_client.force_login(cls.reader)
 
     def test_context_list(self):
         users_notes = (
-            (self.author, True),
-            (self.reader, False),
+            (self.auth_client, self.author, True),
+            (self.reader_client, self.reader, False),
         )
         url = reverse('notes:list')
-        for user, note_in_list in users_notes:
-            self.client.force_login(user)
+        for client, user, note_in_list in users_notes:
             with self.subTest(user=user, note_in_list=note_in_list):
-                response = self.client.get(url)
+                response = client.get(url)
                 note_in_object_list = self.note in response.context[
                     'object_list']
                 self.assertEqual(note_in_object_list, note_in_list)
@@ -44,6 +48,6 @@ class TestContent(TestCase):
         for page, args in urls:
             with self.subTest(page=page):
                 url = reverse(page, args=args)
-                self.client.force_login(self.author)
-                response = self.client.get(url)
+                response = self.auth_client.get(url)
                 self.assertIn('form', response.context)
+                self.assertIsInstance(response.context['form'], NoteForm)
