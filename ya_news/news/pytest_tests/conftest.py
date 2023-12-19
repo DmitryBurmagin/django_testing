@@ -48,6 +48,11 @@ def edit_url(comment):
 
 
 @pytest.fixture
+def del_url(comment):
+    return reverse('news:delete', args=(comment.pk,))
+
+
+@pytest.fixture
 def news(author):
     news = News.objects.create(
         title='Заголовок',
@@ -70,13 +75,12 @@ def comment(author, news):
 @pytest.fixture
 def create_news(author, news):
     now = datetime.now()
-    news_object = News.objects.bulk_create([
+    News.objects.bulk_create([
         News(
             title=f'Новость {i}',
             date=(now + timedelta(days=i)).astimezone(timezone.utc))
         for i in range(11)
     ])
-    return news_object
 
 
 @pytest.fixture
