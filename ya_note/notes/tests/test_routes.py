@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils.text import slugify
 
@@ -23,6 +23,10 @@ class TestRoutes(TestCase):
             slug=slugify(title),
             author=cls.author
         )
+        cls.reader_client = Client()
+        cls.reader_client.force_login(cls.reader)
+        cls.author_client = Client()
+        cls.author_client.force_login(cls.author)
 
     def test_public_page(self):
         urls = (
@@ -42,10 +46,7 @@ class TestRoutes(TestCase):
             (self.reader, HTTPStatus.OK),
         )
         for user, status in users_statuses:
-            if user is not None:
-                self.client.force_login(user)
-            else:
-                self.client.logout()
+            if user is None:
                 urls = (
                     ('notes:add'),
                     ('notes:list'),
@@ -59,11 +60,10 @@ class TestRoutes(TestCase):
 
     def test_edit_page(self):
         users_statuses = (
-            (self.author, HTTPStatus.OK),
-            (self.reader, HTTPStatus.NOT_FOUND),
+            (self.author, HTTPStatus.OK, self.author_client),
+            (self.reader, HTTPStatus.NOT_FOUND, self.reader_client),
         )
-        for user, status in users_statuses:
-            self.client.force_login(user)
+        for user, status, client in users_statuses:
             urls = (
                 ('notes:detail', (self.note.slug,)),
                 ('notes:edit', (self.note.slug,)),
@@ -72,7 +72,7 @@ class TestRoutes(TestCase):
             for name, args in urls:
                 with self.subTest(name=name):
                     url = reverse(name, args=args)
-                    response = self.client.get(url)
+                    response = client.get(url)
                     self.assertEqual(response.status_code, status)
 
     def test_redirect_anonymous(self):

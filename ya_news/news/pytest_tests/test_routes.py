@@ -17,12 +17,6 @@ def test_home_availability_for_anonymous_user(client, name):
     assert response.status_code == SCode.OK
 
 
-def test_news_detail_for_anonymous_user(client, news):
-    url = reverse('news:detail', args=(news.pk,))
-    response = client.get(url)
-    assert response.status_code == SCode.OK
-
-
 @pytest.mark.parametrize(
     'name, parametrized_client, expected_status, expected_redirect',
     (
@@ -31,7 +25,8 @@ def test_news_detail_for_anonymous_user(client, news):
         (lf('edit_url'), lf('reader_client'), SCode.NOT_FOUND, False),
         (lf('del_url'), lf('client'), SCode.FOUND, True),
         (lf('del_url'), lf('author_client'), SCode.OK, False),
-        (lf('del_url'), lf('reader_client'), SCode.NOT_FOUND, False)
+        (lf('del_url'), lf('reader_client'), SCode.NOT_FOUND, False),
+        (lf('detail_url'), lf('client'), SCode.OK, False)
     ),
 )
 def test_edit_comment(parametrized_client, name, expected_status,

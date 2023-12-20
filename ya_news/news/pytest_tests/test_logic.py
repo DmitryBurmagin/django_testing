@@ -45,11 +45,10 @@ def test_user_cant_use_bad_words(reader_client, detail_url):
     assertFormError(response, 'form', 'text', WARNING)
 
 
-def test_auth_user_edit_comments(author_client, author, news, detail_url,
-                                 comment):
+def test_auth_user_edit_comments(author_client, author, news, edit_url,
+                                 detail_url, comment):
     assert Comment.objects.filter(pk=comment.pk).exists()
-    url = reverse('news:edit', args=(comment.pk,))
-    response = author_client.post(url, data=FORM_DATA)
+    response = author_client.post(edit_url, data=FORM_DATA)
     assert response.status_code == SCode.FOUND
     assert response.url == f'{detail_url}#comments'
     comment.refresh_from_db()
